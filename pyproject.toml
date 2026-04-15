@@ -4,4 +4,11 @@ version = "0.1.0"
 description = "A clone of a specific bot."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "asyncpg>=0.31.0",
+    "discord-py",
+    "redis>=7.4.0",
+]
+
+[tool.uv.sources]
+discord-py = { git = "https://github.com/Rapptz/discord.py" }
