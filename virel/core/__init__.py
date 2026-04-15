@@ -2,9 +2,10 @@ import logging
 import os
 
 from discord import Intents, AllowedMentions, ActivityType, Activity
-from discord.ext.commands import AutoShardedBot, MinimalHelpCommand, Context
+from discord.ext.commands import AutoShardedBot, MinimalHelpCommand
 
 from .config import Configuration
+from .functions import Context
 
 logger = logging.getLogger("virel.core")
 logging.getLogger("virel.core").setLevel(logging.INFO)
@@ -51,6 +52,14 @@ class Virel(AutoShardedBot):
         Event called whenever a command is successfully invoked.
         """
         logging.info(f"Command {ctx.command.qualified_name} invoked by {ctx.author} ({ctx.author.id}) in {ctx.guild} ({ctx.guild.id})")
+
+    async def get_context(self, origin, /, *, cls = Context):
+        """
+        Overrides the default get_context method to use the custom Context class
+        defined in virel.core.functions.Context instead of the default discord.py
+        Context class.
+        """
+        return await super().get_context(origin, cls=cls)
 
     async def setup_hook(self):
         """
