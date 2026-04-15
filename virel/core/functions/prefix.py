@@ -17,7 +17,7 @@ async def get_prefix(bot, message: Message):
         row = await bot.pool.fetchrow(
             """
             SELECT prefix 
-            FROM settings 
+            FROM settings.prefix
             WHERE guild_id = $1
             """,
             message.guild.id,

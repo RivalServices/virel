@@ -70,6 +70,7 @@ class Virel(AutoShardedBot):
         Called when the bot is setting up. This is where you can load
         extensions, cogs, or perform other asynchronous setup tasks.
         """
+        
         self.db = PostgresClient()
         await self.db.connect()
         self.pool = self.db.pool
@@ -83,7 +84,7 @@ class Virel(AutoShardedBot):
         """
         Starts the bot using the token from the configuration.
         """
-        
+
         await super().start(Configuration.Bot.token)
 
     async def close(self):

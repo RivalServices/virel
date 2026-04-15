@@ -1,6 +1,7 @@
 from discord import Embed
 from discord.ext.commands import Context as BaseContext
 
+from .paginator import Paginator
 from virel.core.config import Configuration
 
 
@@ -84,3 +85,14 @@ class Context(BaseContext):
             embed = Embed(description=message, color=color or Configuration.Colors.warning)
         
         return await self.reply(embed=embed)
+    
+    async def paginate(self, pages: list[Embed], *, timeout: float = 30.0):
+        """
+        Sends a paginated embed message in the context of the command invocation.
+        Args:
+            pages (list[Embed]): A list of embed pages to paginate through.
+            timeout (float, optional): How long the paginator should wait for interactions before timing out. Defaults to 30.0 seconds.
+        """
+        
+        paginator = Paginator(self, pages, timeout=timeout)
+        await paginator.start()
