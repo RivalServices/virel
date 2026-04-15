@@ -25,3 +25,14 @@ class Configuration:
         
         postgres_url = os.environ.get("postgres_url")
         redis_url = os.environ.get("redis_url")
+    
+    class Colors:
+        """
+        Contains the default color values for embed messages used by the bot
+        for approved, denied, informational, and warning messages.
+        """
+
+        approved = int(os.environ.get("color_approved", "729BB0"), 16)  # Default green
+        denied = int(os.environ.get("color_denied", "FF3939"), 16)   # Default red
+        info = int(os.environ.get("color_info", "729BB0"), 16)            # Default blue
+        warning = int(os.environ.get("color_warning", "FFD600"), 16) # Default yellow
