@@ -22,6 +22,10 @@ class Context(BaseContext):
         Sends an approval embed message in the context of the command invocation.
         """
         embed = kwargs.get("embed")
+        emoji = Configuration.Emojis.approved
+        message = f"{emoji} {self.author.mention}: {message}"
+        
+
         if not embed:
             embed = Embed(description=message, color=color or Configuration.Colors.approved)
         
@@ -37,6 +41,9 @@ class Context(BaseContext):
         Sends a denial embed message in the context of the command invocation.
         """
         embed = kwargs.get("embed")
+        emoji = Configuration.Emojis.denied
+        message = f"{emoji} {self.author.mention}: {message}"
+       
         if not embed:
             embed = Embed(description=message, color=color or Configuration.Colors.denied)
         
@@ -52,6 +59,9 @@ class Context(BaseContext):
         Sends an informational embed message in the context of the command invocation.
         """
         embed = kwargs.get("embed")
+        emoji = Configuration.Emojis.info
+        message = f"{emoji} {self.author.mention}: {message}"
+
         if not embed:
             embed = Embed(description=message, color=color or Configuration.Colors.info)
         
@@ -67,6 +77,9 @@ class Context(BaseContext):
         Sends a warning embed message in the context of the command invocation.
         """
         embed = kwargs.get("embed")
+        emoji = Configuration.Emojis.warning
+        message = f"{emoji} {self.author.mention}: {message}"
+
         if not embed:
             embed = Embed(description=message, color=color or Configuration.Colors.warning)
         

@@ -6,6 +6,10 @@ from discord.ext.commands import AutoShardedBot, MinimalHelpCommand
 
 from .config import Configuration
 from .functions import Context
+from .functions.extensions import load_extensions
+from .functions.prefix import get_prefix
+from .services.postgres import PostgresClient
+from .services.redis import RedisClient
 
 logger = logging.getLogger("virel.core")
 logging.getLogger("virel.core").setLevel(logging.INFO)
@@ -29,7 +33,7 @@ class Virel(AutoShardedBot):
     """
     def __init__(self):
         super().__init__(
-            command_prefix=Configuration.Bot.prefix, 
+            command_prefix=get_prefix, 
             intents=Intents.all(),
             help_command=MinimalHelpCommand(),
             owner_ids=Configuration.Bot.owner_ids,
@@ -66,10 +70,30 @@ class Virel(AutoShardedBot):
         Called when the bot is setting up. This is where you can load
         extensions, cogs, or perform other asynchronous setup tasks.
         """
-        await self.load_extension("jishaku")
+        self.db = PostgresClient()
+        await self.db.connect()
+        self.pool = self.db.pool
+
+        self.redis = RedisClient()
+        await self.redis.connect()
+
+        await load_extensions(self)
 
     async def run(self):
         """
         Starts the bot using the token from the configuration.
         """
+        
         await super().start(Configuration.Bot.token)
+
+    async def close(self):
+        """
+        Closes the database and Redis connections when the bot is shutting down.
+        """
+
+        if hasattr(self, "db") and self.db:
+            await self.db.close()
+        if hasattr(self, "redis") and self.redis:
+            await self.redis.close()
+        
+        await super().close()

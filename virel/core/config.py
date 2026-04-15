@@ -32,7 +32,18 @@ class Configuration:
         for approved, denied, informational, and warning messages.
         """
 
-        approved = int(os.environ.get("color_approved", "729BB0"), 16)  # Default green
-        denied = int(os.environ.get("color_denied", "FF3939"), 16)   # Default red
-        info = int(os.environ.get("color_info", "729BB0"), 16)            # Default blue
-        warning = int(os.environ.get("color_warning", "FFD600"), 16) # Default yellow
+        approved = int(os.environ.get("color_approved", "729BB0"), 16)
+        denied = int(os.environ.get("color_denied", "FF3939"), 16)
+        info = int(os.environ.get("color_info", "729BB0"), 16)
+        warning = int(os.environ.get("color_warning", "FFD600"), 16)
+
+    class Emojis:
+        """
+        Contains the default emoji values for embed messages used by the bot
+        for approved, denied, informational, and warning messages.
+        """
+        
+        approved = os.environ.get("emoji_approved", "✅")
+        denied = os.environ.get("emoji_denied", "❌")
+        info = os.environ.get("emoji_info", "ℹ️")
+        warning = os.environ.get("emoji_warning", "⚠️")
