@@ -1,7 +1,22 @@
-from discord import Intents, AllowedMentions
-from discord.ext.commands import AutoShardedBot, MinimalHelpCommand
+import logging
+import os
+
+from discord import Intents, AllowedMentions, ActivityType, Activity
+from discord.ext.commands import AutoShardedBot, MinimalHelpCommand, Context
 
 from .config import Configuration
+
+logger = logging.getLogger("virel.core")
+logging.getLogger("virel.core").setLevel(logging.INFO)
+logging.getLogger("discord").setLevel(logging.INFO)
+logging.getLogger("discord.gateway").setLevel(logging.INFO)
+
+
+os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
+os.environ["JISHAKU_NO_DM_TRACEBACK"] = "True"
+os.environ["JISHAKU_HIDE"] = "True"
+os.environ["JISHAKU_FORCE_PAGINATOR"] = "True"
+os.environ["JISHAKU_RETAIN"] = "True"
 
 
 class Virel(AutoShardedBot):
@@ -16,6 +31,11 @@ class Virel(AutoShardedBot):
             command_prefix=Configuration.Bot.prefix, 
             intents=Intents.all(),
             help_command=MinimalHelpCommand(),
+            owner_ids=Configuration.Bot.owner_ids,
+            activity=Activity(
+                type=ActivityType.custom, 
+                name="discord.gg/virel"
+            ),
             allowed_mentions=(
                 AllowedMentions(
                     everyone=False,
@@ -26,12 +46,18 @@ class Virel(AutoShardedBot):
             )
         )
 
+    async def on_command(self, ctx: Context):
+        """
+        Event called whenever a command is successfully invoked.
+        """
+        logging.info(f"Command {ctx.command.qualified_name} invoked by {ctx.author} ({ctx.author.id}) in {ctx.guild} ({ctx.guild.id})")
+
     async def setup_hook(self):
         """
         Called when the bot is setting up. This is where you can load
         extensions, cogs, or perform other asynchronous setup tasks.
         """
-        pass
+        await self.load_extension("jishaku")
 
     async def run(self):
         """

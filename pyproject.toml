@@ -7,9 +7,12 @@ requires-python = ">=3.13"
 dependencies = [
     "asyncpg>=0.31.0",
     "discord-py",
+    "jishaku",
+    "psutil>=7.2.2",
     "python-dotenv>=1.2.2",
     "redis>=7.4.0",
 ]
 
 [tool.uv.sources]
 discord-py = { git = "https://github.com/Rapptz/discord.py" }
+jishaku = { git = "https://github.com/scarletcafe/jishaku" }
