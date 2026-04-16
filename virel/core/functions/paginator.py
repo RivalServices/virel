@@ -8,27 +8,43 @@ class Paginator(View):
     A paginator view that allows a user to navigate through multiple pages of embeds
     using buttons. Only the user who invoked the paginator can interact with it.
     """
-    def __init__(self, ctx: Context, pages: list[Embed], *, timeout: float = 30.0):
+    def __init__(self, ctx: Context, entries: list[str], *, embed: Embed = None, per_page: int = 10, timeout: float = 30.0):
         """
-        Initializes the paginator with the context, list of embed pages, and an optional timeout.
+        Initializes the paginator with the context, list of entries, and an optional timeout.
         Args:
             ctx (Context): The context of the command invocation.
-            pages (list[Embed]): A list of embed pages to paginate through.
+            entries (list[str]): A list of string entries to paginate.
+            embed (Embed, optional): A base embed to use for styling (title, color). Defaults to None.
+            per_page (int, optional): Number of entries per page. Defaults to 10.
             timeout (float, optional): How long the paginator should wait for interactions before timing out. Defaults to 30.0 seconds.
         """
         super().__init__(timeout=timeout)
         self.ctx = ctx
-        self.pages = pages
+        self.entries = entries
+        self.per_page = per_page
+        self.base_embed = embed or Embed()
         self.current = 0
         self.message: Message | None = None
-        self._index_pages()
+        self.pages = self._build_pages()
 
-    def _index_pages(self):
+    def _build_pages(self) -> list[Embed]:
         """
-        Adds a footer to each embed page indicating its position in the paginator.
+        Splits entries into chunks and builds indexed embed pages.
         """
-        for i, page in enumerate(self.pages):
-            page.set_footer(text=f"Page {i + 1}/{len(self.pages)}")
+        pages = []
+        for i in range(0, len(self.entries), self.per_page):
+            chunk = self.entries[i:i + self.per_page]
+            description = "\n".join(
+                f"`{i + j + 1}.` {entry}" for j, entry in enumerate(chunk)
+            )
+            embed = Embed(
+                title=self.base_embed.title,
+                description=description,
+                color=self.base_embed.color,
+            )
+            embed.set_footer(text=f"Page {len(pages) + 1}/{-(-len(self.entries) // self.per_page)}")
+            pages.append(embed)
+        return pages
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         """
@@ -56,8 +72,8 @@ class Paginator(View):
         it sends the first page with the paginator view attached.
         """
 
-        if len(self.pages) == 1:
-            self.message = await self.ctx.send(embed=self.pages[0])
+        if len(self.pages) <= 1:
+            self.message = await self.ctx.send(embed=self.pages[0] if self.pages else self.base_embed)
             return
 
         self.message = await self.ctx.send(embed=self.pages[0], view=self)

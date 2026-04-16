@@ -5,6 +5,7 @@ import logging
 import time
 
 from logging import Formatter, StreamHandler
+from contextlib import suppress
 
 class CustomFormatter(Formatter):
     """
@@ -38,5 +39,6 @@ handler = StreamHandler()
 handler.setFormatter(CustomFormatter())
 logging.basicConfig(level=logging.INFO, handlers=[handler])
 
-bot = Virel()
-asyncio.run(bot.run())
+with suppress(KeyboardInterrupt):
+    bot = Virel()
+    asyncio.run(bot.run())
