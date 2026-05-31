@@ -36,6 +36,7 @@ class Configuration:
         denied = int(os.environ.get("color_denied", "FF3939"), 16)
         info = int(os.environ.get("color_info", "729BB0"), 16)
         warning = int(os.environ.get("color_warning", "FFD600"), 16)
+        neutral = int(os.environ.get("color_neutral", "729BB0"), 16)
 
     class Emojis:
         """

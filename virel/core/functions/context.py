@@ -87,20 +87,29 @@ class Context(BaseContext):
         return await self.reply(embed=embed)
     
     async def paginate(
-        self,
-        entries: list[str],
-        *,
-        embed: Embed = None,
-        per_page: int = 10,
-        timeout: float = 30.0,
+        self, 
+        entries: list[str], 
+        *, 
+        embed: Embed = None, 
+        color: int = Configuration.Colors.neutral, 
+        per_page: int = 10, 
+        timeout: float = 10
     ):
         """
         Sends a paginated embed message in the context of the command invocation.
         Args:
-            entries (list[str]): String entries to paginate.
-            embed (Embed, optional): Base embed template (title, color, author, etc.).
+            entries (list[str]): A list of string entries to paginate.
+            embed (Embed, optional): A base embed template copied for each page. Defaults to None.
+            color (int, optional): The color of the embed. Defaults to Configuration.Colors.neutral.
             per_page (int, optional): Number of entries per page. Defaults to 10.
-            timeout (float, optional): How long the paginator should wait for interactions before timing out. Defaults to 30.0 seconds.
+            timeout (float, optional): How long the paginator should wait for interactions before timing out. Defaults to 10 seconds.
         """
-        paginator = Paginator(self, entries, embed=embed, per_page=per_page, timeout=timeout)
+        paginator = Paginator(
+            self, 
+            entries, 
+            embed=embed, 
+            color=color, 
+            per_page=per_page, 
+            timeout=timeout
+        )
         await paginator.start()

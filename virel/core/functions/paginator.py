@@ -1,14 +1,24 @@
-from discord import ButtonStyle, Embed, Interaction, Message
+from discord import ButtonStyle, Embed, Interaction
 from discord.ext.commands import Context
 from discord.ui import View, Button, button
+
+from virel.core.config import Configuration
 
 
 class Paginator(View):
     """
-    A paginator view that allows a user to navigate through multiple pages of embeds
-    using buttons. Only the user who invoked the paginator can interact with it.
+    A paginator for displaying a list of entries in an embed.
     """
-    def __init__(self, ctx: Context, entries: list[str], *, embed: Embed = None, per_page: int = 10, timeout: float = 30.0):
+    def __init__(
+        self,
+        ctx: Context,
+        entries: list[str],
+        *,
+        embed: Embed = None,
+        color: int = Configuration.Colors.neutral,
+        per_page: int = 10,
+        timeout: float = 10.0,
+    ):
         """
         Initializes the paginator with the context, list of entries, and an optional timeout.
         Args:
@@ -20,120 +30,81 @@ class Paginator(View):
         """
         super().__init__(timeout=timeout)
         self.ctx = ctx
-        self.entries = entries
-        self.per_page = per_page
-        self.base_embed = embed or Embed()
         self.current = 0
-        self.message: Message | None = None
-        self.pages = self._build_pages()
-
-    def _build_pages(self) -> list[Embed]:
-        """
-        Splits entries into chunks and builds indexed embed pages.
-        """
-        pages = []
-        total_pages = max(1, -(-len(self.entries) // self.per_page))
-        for i in range(0, len(self.entries), self.per_page):
-            chunk = self.entries[i:i + self.per_page]
-            description = "\n".join(
-                f"`{i + j + 1}.` {entry}" for j, entry in enumerate(chunk)
-            )
-            embed = self.base_embed.copy()
-            embed.description = description
-            page_info = f"Page {len(pages) + 1}/{total_pages}"
-            if embed.footer.text:
-                embed.set_footer(
-                    text=f"{embed.footer.text} • {page_info}",
-                    icon_url=embed.footer.icon_url,
-                )
-            else:
-                embed.set_footer(text=page_info, icon_url=embed.footer.icon_url)
-            pages.append(embed)
-        return pages
+        self.message = None
+        
+        base = embed or Embed(color=color or Configuration.Colors.neutral)
+        total = max(1, (len(entries) + per_page - 1) // per_page)
+        self.pages = []
+        for i in range(0, len(entries), per_page):
+            chunk = entries[i:i + per_page]
+            page = base.copy()
+            page.description = "\n".join(f"`{i + j + 1}.` {e}" for j, e in enumerate(chunk))
+            page.set_footer(text=f"Page {len(self.pages) + 1}/{total}")
+            self.pages.append(page)
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         """
-        Checks if the user interacting with the paginator is the same as the user
-        who invoked the command. If not, sends an ephemeral message indicating
-        they cannot use the paginator.
+        Checks if the user is the same as the context author.
         """
         if interaction.user.id != self.ctx.author.id:
-            await interaction.response.send_message(
-                "You can't use this paginator", ephemeral=True
-            )
+            await interaction.response.send_message("You can't use this paginator", ephemeral=True)
             return False
         return True
 
     async def on_timeout(self):
         """
-        Disables all buttons and edits the message to remove the interactive view
-        when the paginator times out.
+        Called when the paginator times out.
         """
-
         if self.message:
             await self.message.edit(view=None)
 
     async def start(self):
         """
         Starts the paginator by sending the first embed page to the context.
-        If there is only one page, it sends it without the view. Otherwise,
-        it sends the first page with the paginator view attached.
         """
+        embed = self.pages[0] if self.pages else Embed(color=Configuration.Colors.neutral)
+        self.message = await self.ctx.send(embed=embed, view=self if len(self.pages) > 1 else None)
 
-        if len(self.pages) <= 1:
-            self.message = await self.ctx.send(embed=self.pages[0] if self.pages else self.base_embed)
-            return
-
-        self.message = await self.ctx.send(embed=self.pages[0], view=self)
-    
-    @button(emoji="⏮", style=ButtonStyle.grey)
-    async def first(self, interaction: Interaction, btn: Button):
+    async def _show(self, interaction: Interaction, index: int):
         """
-        Navigates to the first page of the paginator and updates the message
-        with the corresponding embed.
+        Shows the embed at the given index.
         """
-
-        self.current = 0
+        self.current = index
         await interaction.response.edit_message(embed=self.pages[self.current])
+
+    @button(emoji="⏮", style=ButtonStyle.grey)
+    async def first(self, interaction: Interaction, _btn: Button):
+        """
+        Shows the first embed page.
+        """
+        await self._show(interaction, 0)
 
     @button(emoji="◀", style=ButtonStyle.grey)
-    async def previous(self, interaction: Interaction, btn: Button):
+    async def previous(self, interaction: Interaction, _btn: Button):
         """
-        Navigates to the previous page of the paginator and updates the message
-        with the corresponding embed.
+        Shows the previous embed page.
         """
-
-        self.current = max(0, self.current - 1)
-        await interaction.response.edit_message(embed=self.pages[self.current])
+        await self._show(interaction, max(0, self.current - 1))
 
     @button(emoji="▶", style=ButtonStyle.grey)
-    async def next(self, interaction: Interaction, btn: Button):
+    async def next(self, interaction: Interaction, _btn: Button):
         """
-        Navigates to the next page of the paginator and updates the message
-        with the corresponding embed.
+        Shows the next embed page.
         """
-
-        self.current = min(len(self.pages) - 1, self.current + 1)
-        await interaction.response.edit_message(embed=self.pages[self.current])
+        await self._show(interaction, min(len(self.pages) - 1, self.current + 1))
 
     @button(emoji="⏭", style=ButtonStyle.grey)
-    async def last(self, interaction: Interaction, btn: Button):
+    async def last(self, interaction: Interaction, _btn: Button):
         """
-        Navigates to the last page of the paginator and updates the message
-        with the corresponding embed.
+        Shows the last embed page.
         """
-
-        self.current = len(self.pages) - 1
-        await interaction.response.edit_message(embed=self.pages[self.current])
+        await self._show(interaction, len(self.pages) - 1)
 
     @button(emoji="⏹", style=ButtonStyle.red)
-    async def stop_paginator(self, interaction: Interaction, btn: Button):
+    async def stop_paginator(self, interaction: Interaction, _btn: Button):
         """
-        Stops the paginator by disabling all buttons and editing the message
-        to remove the interactive view.
+        Stops the paginator by editing the message to remove the view.
         """
-
-        for child in self.children:
-            child.disabled = True
-        await interaction.response.edit_message(view=self)
+        await interaction.response.edit_message(view=None)
         self.stop()

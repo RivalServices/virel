@@ -25,8 +25,8 @@ class Developer(Cog):
         Lists all guilds the bot is currently in.
         """
         entries = [
-            f"{guild.name} ({guild.id}) - {guild.member_count}"
-            for guild in sorted(self.bot.guilds, key=lambda g: g.member_count, reverse=True)
+            f"{guild.name} ({guild.id}) - {guild.member_count or 0}"
+            for guild in sorted(self.bot.guilds, key=lambda g: g.member_count or 0, reverse=True)
         ]
         return await ctx.paginate(entries)
 
