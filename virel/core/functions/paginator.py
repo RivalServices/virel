@@ -14,7 +14,7 @@ class Paginator(View):
         Args:
             ctx (Context): The context of the command invocation.
             entries (list[str]): A list of string entries to paginate.
-            embed (Embed, optional): A base embed to use for styling (title, color). Defaults to None.
+            embed (Embed, optional): A base embed template copied for each page. Defaults to None.
             per_page (int, optional): Number of entries per page. Defaults to 10.
             timeout (float, optional): How long the paginator should wait for interactions before timing out. Defaults to 30.0 seconds.
         """
@@ -32,17 +32,22 @@ class Paginator(View):
         Splits entries into chunks and builds indexed embed pages.
         """
         pages = []
+        total_pages = max(1, -(-len(self.entries) // self.per_page))
         for i in range(0, len(self.entries), self.per_page):
             chunk = self.entries[i:i + self.per_page]
             description = "\n".join(
                 f"`{i + j + 1}.` {entry}" for j, entry in enumerate(chunk)
             )
-            embed = Embed(
-                title=self.base_embed.title,
-                description=description,
-                color=self.base_embed.color,
-            )
-            embed.set_footer(text=f"Page {len(pages) + 1}/{-(-len(self.entries) // self.per_page)}")
+            embed = self.base_embed.copy()
+            embed.description = description
+            page_info = f"Page {len(pages) + 1}/{total_pages}"
+            if embed.footer.text:
+                embed.set_footer(
+                    text=f"{embed.footer.text} • {page_info}",
+                    icon_url=embed.footer.icon_url,
+                )
+            else:
+                embed.set_footer(text=page_info, icon_url=embed.footer.icon_url)
             pages.append(embed)
         return pages
 
@@ -60,10 +65,13 @@ class Paginator(View):
         return True
 
     async def on_timeout(self):
-        for child in self.children:
-            child.disabled = True
+        """
+        Disables all buttons and edits the message to remove the interactive view
+        when the paginator times out.
+        """
+
         if self.message:
-            await self.message.edit(view=self)
+            await self.message.edit(view=None)
 
     async def start(self):
         """
@@ -77,7 +85,7 @@ class Paginator(View):
             return
 
         self.message = await self.ctx.send(embed=self.pages[0], view=self)
-
+    
     @button(emoji="⏮", style=ButtonStyle.grey)
     async def first(self, interaction: Interaction, btn: Button):
         """

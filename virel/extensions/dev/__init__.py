@@ -8,9 +8,15 @@ class Developer(Cog):
     A cog for developer-only commands and utilities.
     """
     def __init__(self, bot: Virel):
+        """
+        Initializes the Developer cog.
+        """
         self.bot = bot
 
     async def cog_check(self, ctx: Context):
+        """
+        Checks if the user is a developer.
+        """
         return super().cog_check(ctx) and ctx.author.id in self.bot.owner_ids
     
     @command()
@@ -18,5 +24,11 @@ class Developer(Cog):
         """
         Lists all guilds the bot is currently in.
         """
-        entries = [f"{guild.name} ({guild.id})" for guild in self.bot.guilds]
+        entries = [
+            f"{guild.name} ({guild.id}) - {guild.member_count}"
+            for guild in sorted(self.bot.guilds, key=lambda g: g.member_count, reverse=True)
+        ]
         return await ctx.paginate(entries)
+
+async def setup(bot: Virel):
+    await bot.add_cog(Developer(bot))
