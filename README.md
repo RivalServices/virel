@@ -4,3 +4,4 @@
 
 ### No support will be provided for setting the bot up, you're expected to have some level of programming knowledge and the ability to read the code and understand how the bot works.
 ### The code is provided as is, no support will be provided for any issues you may have with the bot, the codebase is as clean as possible and is generally pretty easy to understand.
+### Per the [license](/LICENSE.md), you're expected to keep the credits command intact, removing this will result in DMCA's.
