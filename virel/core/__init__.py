@@ -2,11 +2,12 @@ import logging
 import os
 
 from discord import Intents, AllowedMentions, ActivityType, Activity
-from discord.ext.commands import AutoShardedBot, MinimalHelpCommand
+from discord.ext.commands import AutoShardedBot
 
 from .config import Configuration
 from .functions import Context
 from .functions.extensions import load_extensions
+from .functions.help import Help
 from .functions.prefix import get_prefix
 from .services.postgres import PostgresClient
 from .services.redis import RedisClient
@@ -35,7 +36,7 @@ class Virel(AutoShardedBot):
         super().__init__(
             command_prefix=get_prefix, 
             intents=Intents.all(),
-            help_command=MinimalHelpCommand(),
+            help_command=Help(),
             owner_ids=Configuration.Bot.owner_ids,
             activity=Activity(
                 type=ActivityType.custom, 
@@ -55,7 +56,8 @@ class Virel(AutoShardedBot):
         """
         Event called whenever a command is successfully invoked.
         """
-        logging.info(f"Command {ctx.command.qualified_name} invoked by {ctx.author} ({ctx.author.id}) in {ctx.guild} ({ctx.guild.id})")
+        if ctx.valid:
+            logging.info(f"Command {ctx.command.qualified_name} invoked by {ctx.author} ({ctx.author.id}) in {ctx.guild} ({ctx.guild.id})")
 
     async def get_context(self, origin, /, *, cls = Context):
         """
@@ -70,7 +72,6 @@ class Virel(AutoShardedBot):
         Called when the bot is setting up. This is where you can load
         extensions, cogs, or perform other asynchronous setup tasks.
         """
-        
         self.db = PostgresClient()
         await self.db.connect()
         self.pool = self.db.pool
@@ -84,14 +85,12 @@ class Virel(AutoShardedBot):
         """
         Starts the bot using the token from the configuration.
         """
-
         await super().start(Configuration.Bot.token)
 
     async def close(self):
         """
         Closes the database and Redis connections when the bot is shutting down.
         """
-
         if hasattr(self, "db") and self.db:
             await self.db.close()
         if hasattr(self, "redis") and self.redis:

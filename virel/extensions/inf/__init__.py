@@ -1,9 +1,11 @@
 import sys
 import discord
+import time
 
-from discord import Embed, ButtonStyle
+from discord import Embed, ButtonStyle, TextChannel, CategoryChannel, VoiceChannel
+from discord.utils import format_dt
 from discord.ui import Button, View
-from discord.ext.commands import Cog, command
+from discord.ext.commands import Cog, command, CurrentChannel
 
 from virel.core import Virel, Context
 from virel.core.config import Configuration
@@ -83,6 +85,67 @@ class Information(Cog):
         )
         return await ctx.send(view=view)
 
+    @command()
+    async def support(self, ctx: Context):
+        """
+        Shows the support server for the bot.
+        """
+        view = View().add_item(
+            Button(label=f"Support {self.bot.user.name}", url=f"https://discord.gg/rivalbot", style=ButtonStyle.link)
+        )
+        return await ctx.send(view=view)
+
+    @command(aliases=["code"])
+    async def source(self, ctx: Context):
+        """
+        Shows the source code for the bot.
+        """
+        view = View().add_item(
+            Button(label=f"Source Code", url=f"https://github.com/RivalServices/virel", style=ButtonStyle.link)
+        )
+        return await ctx.send(view=view)
+
+    @command()
+    async def ping(self, ctx: Context):
+        """
+        Check the bot's latency.
+        """
+        start = time.perf_counter()
+        message = await ctx.send(f"... `{round(self.bot.latency * 1000)}ms`")
+        rtt = (time.perf_counter() - start) * 1000
+        await message.edit(content=f"... `{round(self.bot.latency * 1000)}ms` (rest: `{round(rtt)}ms`)")
+
+    @command()
+    async def channelinfo(self, ctx: Context, channel: TextChannel | CategoryChannel | VoiceChannel = CurrentChannel):
+        """
+        Shows information about the channel.
+        """
+        embed = Embed(title=channel.name, color=Configuration.Colors.neutral)
+        embed.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
+        embed.add_field(name="Channel ID", value=f"`{channel.id}`", inline=True)
+        embed.add_field(name="Type", value=channel.type.name, inline=True)
+
+        if ctx.guild:
+            embed.add_field(
+                name="Guild",
+                value=f"{ctx.guild.name} `({ctx.guild.id})`",
+                inline=True,
+            )
+            category = getattr(channel, "category", None)
+            embed.add_field(
+                name="Category",
+                value=f"{category.name} `({category.id})`" if category else "None",
+                inline=False,
+            )
+
+        topic = getattr(channel, "topic", None)
+        embed.add_field(name="Topic", value=topic or "None", inline=False)
+        embed.add_field(
+            name="Created At",
+            value=f"{format_dt(channel.created_at, 'F')} ({format_dt(channel.created_at, 'R')})",
+            inline=False,
+        )
+        return await ctx.send(embed=embed)
 
 async def setup(bot: Virel):
     await bot.add_cog(Information(bot))
