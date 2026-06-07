@@ -44,6 +44,7 @@ class Configuration:
         for approved, denied, informational, and warning messages.
         """
         
-        approved = os.environ.get("emoji_approved", "✅")
-        denied = os.environ.get("emoji_denied", "❌")
-        warning = os.environ.get("emoji_warning", "⚠️")
+        approved = os.environ.get("emoji_approved")
+        denied = os.environ.get("emoji_denied")
+        info = os.environ.get("emoji_info")
+        warning = os.environ.get("emoji_warning")
