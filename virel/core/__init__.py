@@ -5,10 +5,8 @@ from discord import Intents, AllowedMentions, ActivityType, Activity
 from discord.ext.commands import AutoShardedBot
 
 from .config import Configuration
-from .functions import Context
-from .functions.extensions import load_extensions
-from .functions.help import Help
-from .functions.prefix import get_prefix
+from .functions.context import Context
+from .functions.discord import load_extensions, Help, get_prefix
 from .services.postgres import PostgresClient
 from .services.redis import RedisClient
 
