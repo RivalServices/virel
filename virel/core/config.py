@@ -46,5 +46,4 @@ class Configuration:
         
         approved = os.environ.get("emoji_approved", "✅")
         denied = os.environ.get("emoji_denied", "❌")
-        info = os.environ.get("emoji_info", "ℹ️")
         warning = os.environ.get("emoji_warning", "⚠️")

@@ -2,7 +2,15 @@ import sys
 import discord
 import time
 
-from discord import Embed, ButtonStyle, TextChannel, CategoryChannel, VoiceChannel
+from discord import (
+    Embed, 
+    ButtonStyle,   
+    TextChannel, 
+    CategoryChannel, 
+    VoiceChannel, 
+    Role,
+    User
+)
 from discord.utils import format_dt
 from discord.ui import Button, View
 from discord.ext.commands import Cog, command, CurrentChannel
@@ -21,7 +29,7 @@ class Information(Cog):
         """
         self.bot = bot
 
-    @command(aliases=["info", "about", "bi"])
+    @command(aliases=["info", "about", "bi", "bot"])
     async def botinfo(self, ctx: Context):
         """
         Shows information about the bot.
@@ -61,6 +69,25 @@ class Information(Cog):
             ),
             inline=True,
         )
+        return await ctx.send(embed=embed)
+
+    @command(aliases=["ri"])
+    async def roleinfo(self, ctx: Context, role: Role = None):
+        """
+        Shows information about a role.
+        """
+        role = role or ctx.author.top_role
+        dangerous_perms = await ctx.dangerous_perms(role)
+
+        embed = Embed(title=f"{role.name}", color=role.color)
+        embed.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
+        embed.add_field(name="Role ID", value=f"``{role.id}``", inline=True)
+        embed.add_field(name="Role color", value=str(role.color) if role.color else "No color", inline=True)
+        embed.add_field(name="Created", value=format_dt(role.created_at, style="R") + f" ({format_dt(role.created_at, style='R')})", inline=False)
+        embed.add_field(name="Members", value=', '.join([m.name for m in list(role.members)[:5]]) + (f" +{len(role.members) - 5}" if len(role.members) > 5 else ""), inline=False)
+        embed.add_field(name="Permissions", value=", ".join(dangerous_perms).replace("_", " ").title() if dangerous_perms else "No dangerous permissions", inline=False)
+        embed.set_thumbnail(url=role.icon.url if role.icon else None)
+
         return await ctx.send(embed=embed)
 
     @command()
@@ -115,7 +142,21 @@ class Information(Cog):
         rtt = (time.perf_counter() - start) * 1000
         await message.edit(content=f"... `{round(self.bot.latency * 1000)}ms` (rest: `{round(rtt)}ms`)")
 
-    @command()
+    @command(aliases=["av"])
+    async def avatar(self, ctx: Context, user: User = None):
+        """
+        Shows the avatar of a user.
+        """
+        user = user or ctx.author
+        if not user.avatar:
+            return await ctx.warning(f"{'You' if user == ctx.author else user.mention} does not have an avatar")
+        
+        embed = Embed(color=Configuration.Colors.neutral)
+        embed.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar.url)
+        embed.set_image(url=user.display_avatar.url)
+        return await ctx.send(embed=embed)
+
+    @command(aliases=["ci"])
     async def channelinfo(self, ctx: Context, channel: TextChannel | CategoryChannel | VoiceChannel = CurrentChannel):
         """
         Shows information about the channel.

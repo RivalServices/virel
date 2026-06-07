@@ -13,6 +13,29 @@ class Context(BaseContext):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    async def dangerous_perms(self, role):
+        """
+        Checks if a role has dangerous permissions.
+        """
+        dangerous_perms = [
+            perm for perm, value in role.permissions if value and perm in [
+                "administrator", 
+                "manage_guild", 
+                "manage_channels", 
+                "ban_members", 
+                "kick_members",
+                "manage_roles",
+                "manage_permissions",
+                "manage_webhooks",
+                "manage_expressions",
+                "manage_emojis",
+                "manage_nicknames",
+                "manage_messages",
+                "manage_threads",
+            ]
+        ]
+        return dangerous_perms
+
     async def approved(
         self, 
         message: str,
