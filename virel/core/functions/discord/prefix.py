@@ -1,6 +1,7 @@
 from discord import Message
+from discord.ext.commands import when_mentioned_or
 
-from ..config import Configuration
+from ...config import Configuration
 
 
 async def get_prefix(bot, message: Message):
@@ -28,4 +29,4 @@ async def get_prefix(bot, message: Message):
     except Exception:
         pass
 
-    return Configuration.Bot.prefix
+    return when_mentioned_or(Configuration.Bot.prefix)(bot, message)

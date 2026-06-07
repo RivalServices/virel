@@ -8,7 +8,7 @@ from discord.ext.commands import Cog, Command, Context, Greedy, Group, HelpComma
 from typing import Union, get_args, get_origin
 
 from virel.core.config import Configuration
-from virel.core.functions.paginator import Paginator
+from virel.core.functions.context.paginator import Paginator
 
 FLAGS_RE = re.compile(r"\n(?:Optional )?Flags\n[-=]+\n", re.I)
 EXAMPLE_RE = re.compile(r"\nExample:\s*\n", re.I)

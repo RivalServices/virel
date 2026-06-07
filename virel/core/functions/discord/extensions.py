@@ -16,7 +16,7 @@ async def load_extensions(bot: "Virel"):
     each subdirectory that contains an `__init__.py` file and attempting to
     load it as a bot extension.
     """
-    extensions_dir = Path(__file__).resolve().parent.parent.parent / "extensions"
+    extensions_dir = Path(__file__).resolve().parent.parent.parent.parent / "extensions"
     await bot.load_extension("jishaku")
     logger.info("Loaded extension: jishaku")
 
