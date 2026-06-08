@@ -31,7 +31,8 @@ class Prefix(Cog):
         if prefix:
             embed.add_field(name="Prefix", value=f">>> {prefix} - Server Prefix\n{self.bot.user.mention} - Bot Mention")
         else:
-            embed.add_field(name="Prefix", value=f">>> {self.bot.user.mention} - Bot Mention")
+            default_prefix = Configuration.Bot.prefix
+            embed.add_field(name="Prefix", value=f">>> {default_prefix} - Default Prefix\n{self.bot.user.mention} - Bot Mention")
         
         return await ctx.send(embed=embed)
     

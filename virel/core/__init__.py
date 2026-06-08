@@ -1,3 +1,5 @@
+import discord_ios
+
 import logging
 import os
 

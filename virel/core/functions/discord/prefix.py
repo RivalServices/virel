@@ -24,7 +24,7 @@ async def get_prefix(bot, message: Message):
             message.guild.id,
         )
         if row and row["prefix"]:
-            return row["prefix"]
+            return when_mentioned_or(row["prefix"])(bot, message)
     
     except Exception:
         pass
