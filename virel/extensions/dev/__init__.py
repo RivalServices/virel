@@ -1,7 +1,11 @@
 from discord import Embed
 from discord.ext.commands import Cog, command
 
+from logging import getLogger
+
 from virel.core import Virel, Context
+
+logger = getLogger(__name__)
 
 class Developer(Cog):
     """
@@ -29,6 +33,19 @@ class Developer(Cog):
             for guild in sorted(self.bot.guilds, key=lambda g: g.member_count or 0, reverse=True)
         ]
         return await ctx.paginate(entries)
+
+    @command()
+    async def reload(self, ctx: Context, extension: str):
+        """
+        Reloads a cog.
+        """
+        try:
+            await self.bot.reload_extension(f"virel.extensions.{extension}")
+            await ctx.approved(f"Reloaded {extension}")
+            logger.info(f"Reloaded {extension}")
+        
+        except Exception as e:
+            await ctx.denied(f"Failed to reload {extension}: {e}")
 
 async def setup(bot: Virel):
     await bot.add_cog(Developer(bot))
