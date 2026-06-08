@@ -2,6 +2,11 @@ import sys
 import discord
 import time
 
+import humanize
+
+from humanize import precisedelta
+from datetime import datetime, timedelta, timezone
+
 from discord import (
     Embed, 
     ButtonStyle,   
@@ -11,6 +16,7 @@ from discord import (
     Role,
     User
 )
+
 from discord.utils import format_dt
 from discord.ui import Button, View
 from discord.ext.commands import Cog, command, CurrentChannel
@@ -71,6 +77,38 @@ class Information(Cog):
         )
         return await ctx.send(embed=embed)
 
+    @command()
+    async def uptime(self, ctx: Context):
+        """
+        Shows the uptime of the bot.
+        """
+        return await ctx.send(f"{precisedelta(datetime.now() - self.bot.startup_time, format='%0.0f')}")
+    
+    @command(aliases=["ui", "whois", "who"])
+    async def userinfo(self, ctx, member: discord.Member = None):
+        member = member or ctx.author
+        now = datetime.now(timezone.utc)
+
+        roles = [r.mention for r in member.roles[1:]]
+        join_pos = sorted(ctx.guild.members, key=lambda m: m.joined_at or now).index(member) + 1
+        mutual = sum(1 for g in self.bot.guilds if member in g.members)
+
+        embed = discord.Embed(color=Configuration.Colors.neutral)
+        embed.set_author(name=f"{member.name} ({member.id})", icon_url=member.display_avatar.url)
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.add_field(name="Created", value=f"<t:{int(member.created_at.timestamp())}:D>\n<t:{int(member.created_at.timestamp())}:R>", inline=True)
+        embed.add_field(name="Joined", value=f"<t:{int(member.joined_at.timestamp())}:D>\n<t:{int(member.joined_at.timestamp())}:R>", inline=True)
+
+        if member.premium_since:
+            embed.add_field(name="Boosting", value=f"<t:{int(member.premium_since.timestamp())}:D>\n<t:{int(member.premium_since.timestamp())}:R>", inline=True)
+
+        if roles:
+            embed.add_field(name=f"Roles [{len(roles)}]", value=" ".join(roles), inline=False)
+
+        embed.set_footer(text=f"Join position: {join_pos} • {mutual} server(s)")
+
+        await ctx.send(embed=embed)
+
     @command(aliases=["ri"])
     async def roleinfo(self, ctx: Context, role: Role = None):
         """
@@ -98,7 +136,8 @@ class Information(Cog):
         embed = Embed(title="Credits", color=Configuration.Colors.neutral)
         embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
         embed.description = (
-            f"[vael](https://discord.com/users/604463848526708757) - Developer"
+            f"[vael](https://discord.com/users/604463848526708757) - Developer\n"
+            f"[j](https://discord.com/users/123799422906793986) - Developer"
         )
         return await ctx.send(embed=embed)
 
@@ -120,7 +159,7 @@ class Information(Cog):
         view = View().add_item(
             Button(label=f"Support {self.bot.user.name}", url=f"https://discord.gg/rivalbot", style=ButtonStyle.link)
         )
-        return await ctx.send(view=view)
+        return await ctx.send("<https://discord.gg/rivalbot>")#iew=view)
 
     @command(aliases=["code"])
     async def source(self, ctx: Context):
@@ -130,6 +169,7 @@ class Information(Cog):
         view = View().add_item(
             Button(label=f"Source Code", url=f"https://github.com/RivalServices/virel", style=ButtonStyle.link)
         )
+        await ctx.message.add_reaction("😂")
         return await ctx.send(view=view)
 
     @command()

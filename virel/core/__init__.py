@@ -3,8 +3,10 @@ import discord_ios
 import logging
 import os
 
-from discord import Intents, AllowedMentions, ActivityType, Activity
+from discord import Intents, AllowedMentions, Activity, ActivityType
 from discord.ext.commands import AutoShardedBot
+
+from datetime import datetime
 
 from .config import Configuration
 from .functions.context import Context
@@ -51,6 +53,7 @@ class Virel(AutoShardedBot):
                 )
             )
         )
+        self.startup_time = datetime.now()
 
     async def on_command(self, ctx: Context):
         """
