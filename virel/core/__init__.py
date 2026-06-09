@@ -1,5 +1,6 @@
 import discord_ios
 
+import asyncio
 import logging
 import os
 
@@ -11,6 +12,7 @@ from datetime import datetime
 from .config import Configuration
 from .functions.context import Context
 from .functions.discord import load_extensions, Help, get_prefix
+from .network import NetworkServer
 from .services.postgres import PostgresClient
 from .services.redis import RedisClient
 
@@ -54,6 +56,11 @@ class Virel(AutoShardedBot):
             )
         )
         self.startup_time = datetime.now()
+        self.shard_ready_times: dict[int, datetime] = {}
+        self.network = NetworkServer(self)
+
+    async def on_shard_ready(self, shard_id: int):
+        self.shard_ready_times[shard_id] = datetime.now()
 
     async def on_command(self, ctx: Context):
         """
@@ -84,6 +91,8 @@ class Virel(AutoShardedBot):
 
         await load_extensions(self)
 
+        asyncio.get_event_loop().create_task(self.network.start())
+
     async def run(self):
         """
         Starts the bot using the token from the configuration.
@@ -99,4 +108,5 @@ class Virel(AutoShardedBot):
         if hasattr(self, "redis") and self.redis:
             await self.redis.close()
         
+        await self.network.stop()
         await super().close()

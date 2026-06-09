@@ -14,12 +14,13 @@ from discord import (
     CategoryChannel, 
     VoiceChannel, 
     Role,
-    User
+    User,
+    Member
 )
 
 from discord.utils import format_dt
 from discord.ui import Button, View
-from discord.ext.commands import Cog, command, CurrentChannel
+from discord.ext.commands import Cog, command, CurrentChannel, Author
 
 from virel.core import Virel, Context
 from virel.core.config import Configuration
@@ -77,23 +78,40 @@ class Information(Cog):
         )
         return await ctx.send(embed=embed)
 
-    @command()
+    @command(name = "uptime", aliases = ["boot", "up", "startup"])
     async def uptime(self, ctx: Context):
         """
         Shows the uptime of the bot.
         """
-        return await ctx.send(f"{precisedelta(datetime.now() - self.bot.startup_time, format='%0.0f')}")
+        return await ctx.reply(f"ngl.. i been peepin for {precisedelta(datetime.now() - self.bot.startup_time, format='%0.0f')}")
     
+    @command(name="roles")
+    async def roles(self, ctx: Context):
+        """
+        Shows a list of all roles in the guild.
+        """
+        if not (roles := list(reversed(ctx.guild.roles[1:]))):
+            raise CommandError(f"No roles have been found in {ctx.guild.name}!")
+
+        rows = [f"{i + 1}. {role.mention} \u2013 {len(role.members)} member{'s' if len(role.members) != 1 else ''}" for i, role in enumerate(roles)]
+
+        embed = Embed(title=f"Roles in {ctx.guild.name}", color=Configuration.Colors.neutral)
+        embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None)
+
+        return await ctx.paginate(rows, embed=embed)
+
     @command(aliases=["ui", "whois", "who"])
-    async def userinfo(self, ctx, member: discord.Member = None):
-        member = member or ctx.author
+    async def userinfo(self, ctx, member: Member = Author):
+        """
+        Shows information about a user.
+        """
         now = datetime.now(timezone.utc)
 
         roles = [r.mention for r in member.roles[1:]]
         join_pos = sorted(ctx.guild.members, key=lambda m: m.joined_at or now).index(member) + 1
         mutual = sum(1 for g in self.bot.guilds if member in g.members)
 
-        embed = discord.Embed(color=Configuration.Colors.neutral)
+        embed = Embed(color=Configuration.Colors.neutral)
         embed.set_author(name=f"{member.name} ({member.id})", icon_url=member.display_avatar.url)
         embed.set_thumbnail(url=member.display_avatar.url)
         embed.add_field(name="Created", value=f"<t:{int(member.created_at.timestamp())}:D>\n<t:{int(member.created_at.timestamp())}:R>", inline=True)
@@ -122,7 +140,7 @@ class Information(Cog):
         embed.add_field(name="Role ID", value=f"``{role.id}``", inline=True)
         embed.add_field(name="Role color", value=str(role.color) if role.color else "No color", inline=True)
         embed.add_field(name="Created", value=format_dt(role.created_at, style="R") + f" ({format_dt(role.created_at, style='R')})", inline=False)
-        embed.add_field(name="Members", value=', '.join([m.name for m in list(role.members)[:5]]) + (f" +{len(role.members) - 5}" if len(role.members) > 5 else ""), inline=False)
+        embed.add_field(name=f"Members ({len(role.members)})", value=', '.join([m.name for m in list(role.members)[:5]]) + (f" +{len(role.members) - 5}" if len(role.members) > 5 else ""), inline=False)
         embed.add_field(name="Permissions", value=", ".join(dangerous_perms).replace("_", " ").title() if dangerous_perms else "No dangerous permissions", inline=False)
         embed.set_thumbnail(url=role.icon.url if role.icon else None)
 
