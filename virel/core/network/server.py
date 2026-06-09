@@ -32,6 +32,7 @@ def make_app(bot: "Virel") -> Litestar:
         route_handlers=[health, guilds, commands],
         cors_config=CORSConfig(allow_origins=["*"]),
         on_startup=[on_startup],
+        logging_config=None,
     )
 
 
@@ -63,7 +64,7 @@ class NetworkServer:
             host=self.host,
             port=self.port,
             log_level="info",
-            configure_logging=False,
+            log_config=None,
         )
         self._server = uvicorn.Server(config)
         logger.info(f"Network API starting on {self.host}:{self.port}")
