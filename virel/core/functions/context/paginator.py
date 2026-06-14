@@ -1,301 +1,110 @@
-from inspect import iscoroutinefunction as iscoro, isfunction as isfunc
-import asyncio
-import discord
-from discord.ui import LayoutView, Container, TextDisplay
+from discord import ButtonStyle, Embed, Interaction
+from discord.ext.commands import Context
+from discord.ui import View, Button, button
 
-class prev_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, row=row)
-
-	async def callback(self, interaction):
-		await interaction.response.defer()
-		view = self.view
-		view.page -= 1
-		if view.page < 0:
-			view.page = len(view.embeds) - 1
-		view.update_view()
-		await view.edit_embed(interaction)
+from virel.core.config import Configuration
 
 
-class first_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, row=row)
+class Paginator(View):
+    """
+    A paginator for displaying a list of entries in an embed.
+    """
+    def __init__(
+        self,
+        ctx: Context,
+        entries: list[str],
+        *,
+        embed: Embed = None,
+        color: int = Configuration.Colors.neutral,
+        per_page: int = 10,
+        timeout: float = 10.0,
+    ):
+        """
+        Initializes the paginator with the context, list of entries, and an optional timeout.
+        Args:
+            ctx (Context): The context of the command invocation.
+            entries (list[str]): A list of string entries to paginate.
+            embed (Embed, optional): A base embed template copied for each page. Defaults to None.
+            per_page (int, optional): Number of entries per page. Defaults to 10.
+            timeout (float, optional): How long the paginator should wait for interactions before timing out. Defaults to 30.0 seconds.
+        """
+        super().__init__(timeout=timeout)
+        self.ctx = ctx
+        self.current = 0
+        self.message = None
+        
+        base = embed or Embed(color=color or Configuration.Colors.neutral)
+        total = max(1, (len(entries) + per_page - 1) // per_page)
+        self.pages = []
+        for i in range(0, len(entries), per_page):
+            chunk = entries[i:i + per_page]
+            page = base.copy()
+            page.description = "\n".join(f"`{i + j + 1}.` {e}" for j, e in enumerate(chunk))
+            page.set_footer(text=f"Page {len(self.pages) + 1}/{total}")
+            self.pages.append(page)
 
-	async def callback(self, interaction):
-		await interaction.response.defer()
-		view = self.view
-		view.page = 0
-		view.update_view()
-		await view.edit_embed(interaction)
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        """
+        Checks if the user is the same as the context author.
+        """
+        if interaction.user.id != self.ctx.author.id:
+            await interaction.response.send_message("You can't use this paginator", ephemeral=True)
+            return False
+        return True
 
+    async def on_timeout(self):
+        """
+        Called when the paginator times out.
+        """
+        if self.message:
+            await self.message.edit(view=None)
 
-class next_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, row=row)
+    async def start(self):
+        """
+        Starts the paginator by sending the first embed page to the context.
+        """
+        embed = self.pages[0] if self.pages else Embed(color=Configuration.Colors.neutral)
+        self.message = await self.ctx.send(embed=embed, view=self if len(self.pages) > 1 else None)
 
-	async def callback(self, interaction):
-		await interaction.response.defer()
-		view = self.view
-		view.page += 1
-		if view.page == len(view.embeds):
-			view.page = 0
-		view.update_view()
-		await view.edit_embed(interaction)
+    async def _show(self, interaction: Interaction, index: int):
+        """
+        Shows the embed at the given index.
+        """
+        self.current = index
+        await interaction.response.edit_message(embed=self.pages[self.current])
 
+    @button(emoji="⏮", style=ButtonStyle.grey)
+    async def first(self, interaction: Interaction, _btn: Button):
+        """
+        Shows the first embed page.
+        """
+        await self._show(interaction, 0)
 
-class last_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, row=row)
+    @button(emoji="◀", style=ButtonStyle.grey)
+    async def previous(self, interaction: Interaction, _btn: Button):
+        """
+        Shows the previous embed page.
+        """
+        await self._show(interaction, max(0, self.current - 1))
 
-	async def callback(self, interaction):
-		await interaction.response.defer()
-		view = self.view
-		view.page = len(view.embeds) - 1
-		view.update_view()
-		await view.edit_embed(interaction)
+    @button(emoji="▶", style=ButtonStyle.grey)
+    async def next(self, interaction: Interaction, _btn: Button):
+        """
+        Shows the next embed page.
+        """
+        await self._show(interaction, min(len(self.pages) - 1, self.current + 1))
 
+    @button(emoji="⏭", style=ButtonStyle.grey)
+    async def last(self, interaction: Interaction, _btn: Button):
+        """
+        Shows the last embed page.
+        """
+        await self._show(interaction, len(self.pages) - 1)
 
-class delete_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, row=row)
-
-	async def callback(self, interaction):
-		view = self.view
-		await view.message.delete()
-		await interaction.response.defer()
-		view.stop()
-
-
-class end_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, row=row)
-
-	async def callback(self, interaction):
-		await interaction.response.edit_message(view=None)
-		self.view.stop()
-
-
-class show_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, disabled=True, row=row)
-
-
-class goto_modal(discord.ui.Modal, title="Go to"):
-	def __init__(self, button):
-		super().__init__()
-		self.button = button
-		self.page_num = discord.ui.TextInput(
-			label="Page",
-			placeholder=f"page number 1-{len(self.button.view.embeds)}",
-			style=discord.TextStyle.short,
-			required=True,
-		)
-		self.add_item(self.page_num)
-
-	async def on_submit(self, interaction: discord.Interaction):
-		try:
-			view = self.button.view
-			num = int(self.page_num.value) - 1
-			if num in range(len(view.embeds)):
-				view.page = num
-			else:
-				return await interaction.followup.send(content="Invalid number: aborting", ephemeral=True)
-			view.update_view()
-			await view.edit_embed(interaction)
-			try:
-				await interaction.defer()
-			except Exception:
-				pass
-		except ValueError:
-			return await interaction.response.send_message(content="That's not a number", ephemeral=True)
-
-
-class goto_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, row=row)
-
-	async def callback(self, interaction):
-		await interaction.response.send_modal(goto_modal(self))
-
-
-class lock_page(discord.ui.Button):
-	def __init__(self, label, emoji, style, row):
-		super().__init__(label=label, emoji=emoji, style=style, row=row)
-
-	async def callback(self, interaction):
-		await interaction.response.edit_message(view=None)
-		self.view.stop()
-
-
-class Paginator(discord.ui.View):
-	def __init__(
-		self,
-		bot,
-		embeds,
-		destination,
-		/,
-		*,
-		invoker=None,
-		attachments=None,
-		error_emoji=None,
-		error_color=None,
-		timeout=25,
-	):
-		super().__init__(timeout=timeout)
-		interactionfailed = None
-		check = None
-		defer = True
-		self.emoji = error_emoji or "<:warning:1493152864195973263>"
-		self.color = int(error_color, 16) if error_color else 15111941
-		self.check = check
-		self.bot = bot
-		self.attachments = attachments
-		self.defer = defer
-		self.embeds = embeds
-		self.page = 0
-		self.destination = destination
-		self.interactionfailed = interactionfailed
-		self.invoker = invoker
-		self.page_button = None
-		self.message = None
-
-	def default_pagination(self):
-		self.add_button("first", label="first")
-		self.add_button("back", label="back")
-		self.add_button("page", label="page")
-		self.add_button("next", label="next")
-		self.add_button("last", label="last")
-		self.add_button("delete", label="Close paginator")
-
-	async def edit_embed(self, interaction):
-		current = self.embeds[self.page]
-		if self.attachments:
-			current_attachment = [self.attachments[self.page]]
-			if isinstance(current, str):
-				await interaction.message.edit(content=current, embed=None, view=self, attachments=current_attachment)
-			elif isinstance(current, discord.Embed):
-				await interaction.message.edit(content=None, embed=current, view=self, attachments=current_attachment)
-			elif isinstance(current, tuple):
-				dct = {}
-				for item in current:
-					if isinstance(item, str):
-						dct["content"] = item
-					elif isinstance(item, discord.Embed):
-						dct["embed"] = item
-				await interaction.message.edit(content=dct.get("content"), embed=dct.get("embed"), view=self, attachments=current_attachment)
-		else:
-			if isinstance(current, str):
-				await interaction.message.edit(content=current, embed=None, view=self)
-			elif isinstance(current, discord.Embed):
-				await interaction.message.edit(content=None, embed=current, view=self)
-			elif isinstance(current, tuple):
-				dct = {}
-				for item in current:
-					if isinstance(item, str):
-						dct["content"] = item
-					elif isinstance(item, discord.Embed):
-						dct["embed"] = item
-				await interaction.message.edit(content=dct.get("content"), embed=dct.get("embed"), view=self)
-
-	async def start(self):
-		try:
-			current = self.embeds[self.page]
-			if self.attachments:
-				current_attachment = self.attachments[self.page]
-				if isinstance(current, str):
-					self.message = await self.destination.send(content=current, embed=None, view=self, file=current_attachment)
-				elif isinstance(current, discord.Embed):
-					self.message = await self.destination.send(content=None, embed=current, view=self, file=current_attachment)
-				elif isinstance(current, tuple):
-					dct = {}
-					for item in current:
-						if isinstance(item, str):
-							dct["content"] = item
-						elif isinstance(item, discord.Embed):
-							dct["embed"] = item
-					self.message = await self.destination.send(content=dct.get("content"), embed=dct.get("embed"), view=self, file=current_attachment)
-			else:
-				if isinstance(current, str):
-					self.message = await self.destination.send(content=current, embed=None, view=self)
-				elif isinstance(current, discord.Embed):
-					self.message = await self.destination.send(content=None, embed=current, view=self)
-				elif isinstance(current, tuple):
-					dct = {}
-					for item in current:
-						if isinstance(item, str):
-							dct["content"] = item
-						elif isinstance(item, discord.Embed):
-							dct["embed"] = item
-					self.message = await self.destination.send(content=dct.get("content"), embed=dct.get("embed"), view=self)
-		except discord.HTTPException:
-			self.stop()
-
-	async def interaction_check(self, interaction: discord.Interaction) -> bool:
-		if not self.invoker:
-			return True
-		if interaction.user.id != self.invoker:
-			await interaction.followup.send(
-				ephemeral=True,
-				embed=discord.Embed(
-					description=f"> {interaction.user.mention}: **You aren't the author of this embed**",
-					color=self.color,
-				),
-			)
-			return False
-		return True
-
-	async def on_timeout(self):
-		if self.message:
-			try:
-				await self.message.edit(view=None)
-			except discord.NotFound:
-				pass
-		self.stop()
-
-	def update_view(self):
-		try:
-			self.page_button.label = None
-		except (NameError, AttributeError):
-			pass
-
-	def add_button(self, action, /, *, label="", emoji=None, style=discord.ButtonStyle.grey, row=None):
-		action = action.strip().lower()
-		if action not in ["first", "prev", "previous", "back", "delete", "next", "last", "end", "page", "show", "goto", "lock"]:
-			return
-		elif action == "first":
-			self.add_item(first_page(label, emoji, style, row))
-		elif action in ["back", "prev", "previous"]:
-			self.add_item(prev_page(label, emoji, style, row))
-		elif action in ["page", "show"]:
-			button = show_page("1", emoji, style, row)
-			self.page_button = button
-			self.add_item(button)
-			self.update_view()
-		elif action == "goto":
-			button = goto_page(None, emoji, style, row)
-			self.page_button = button
-			self.add_item(button)
-			self.update_view()
-		elif action == "next":
-			self.add_item(next_page(label, emoji, style, row))
-		elif action == "last":
-			self.add_item(last_page(label, emoji, style, row))
-		elif action == "end":
-			self.add_item(end_page(label, emoji, style, row))
-		elif action == "delete":
-			self.add_item(delete_page(label, emoji, style, row))
-		elif action == "lock":
-			self.add_item(lock_page(label, emoji, style, row))
-
-
-def embed_creator(text, num, /, *, title="", prefix="", suffix="", color=None, colour=None):
-	if color is not None and colour is not None:
-		raise ValueError
-	return [
-		discord.Embed(
-			title=title,
-			description=prefix + (text[i:i + num]) + suffix,
-			color=color if color is not None else colour,
-		)
-		for i in range(0, len(text), num)
-	]
+    @button(emoji="⏹", style=ButtonStyle.red)
+    async def stop_paginator(self, interaction: Interaction, _btn: Button):
+        """
+        Stops the paginator by editing the message to remove the view.
+        """
+        await interaction.response.edit_message(view=None)
+        self.stop()
