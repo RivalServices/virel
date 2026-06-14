@@ -1,4 +1,5 @@
 from . import Virel
+from .functions.login import apply_login_patch
 
 import asyncio
 import logging
@@ -40,5 +41,6 @@ handler.setFormatter(CustomFormatter())
 logging.basicConfig(level=logging.INFO, handlers=[handler])
 
 with suppress(KeyboardInterrupt):
+    apply_login_patch()
     bot = Virel()
     asyncio.run(bot.run())

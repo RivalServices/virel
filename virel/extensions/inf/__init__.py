@@ -15,12 +15,12 @@ from discord import (
     VoiceChannel, 
     Role,
     User,
-    Member
+    Member,
 )
 
 from discord.utils import format_dt
 from discord.ui import Button, View
-from discord.ext.commands import Cog, command, CurrentChannel, Author
+from discord.ext.commands import Cog, command, CurrentChannel, Author, CommandError
 
 from virel.core import Virel, Context
 from virel.core.config import Configuration
@@ -98,7 +98,7 @@ class Information(Cog):
         embed = Embed(title=f"Roles in {ctx.guild.name}", color=Configuration.Colors.neutral)
         embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None)
 
-        return await ctx.paginate(rows, embed=embed)
+        return await ctx.paginate(embed, rows)
 
     @command(aliases=["ui", "whois", "who"])
     async def userinfo(self, ctx, member: Member = Author):

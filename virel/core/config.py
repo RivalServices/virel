@@ -17,6 +17,7 @@ class Configuration:
         prefix = os.environ.get("prefix", "!")
         token = os.environ.get("token")
         owner_ids = [int(x) for x in os.environ.get("owner_ids", "").split(",") if x]
+        client_id = os.environ.get("client_id")
 
     class Core:
         """

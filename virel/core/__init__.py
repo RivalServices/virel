@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 
-from discord import Intents, AllowedMentions, Activity, ActivityType
+from discord import Intents, AllowedMentions, CustomActivity
 from discord.ext.commands import AutoShardedBot
 
 from datetime import datetime
@@ -41,11 +41,9 @@ class Virel(AutoShardedBot):
             command_prefix=get_prefix, 
             intents=Intents.all(),
             help_command=Help(),
+            shard_count=17,
             owner_ids=Configuration.Bot.owner_ids,
-            activity=Activity(
-                type=ActivityType.custom, 
-                name="discord.gg/virel"
-            ),
+            activity=CustomActivity(os.environ.get("activity"), emoji="🔗"),
             allowed_mentions=(
                 AllowedMentions(
                     everyone=False,
