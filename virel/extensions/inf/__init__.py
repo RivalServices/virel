@@ -1,3 +1,4 @@
+from socket import gaierror
 import sys
 import discord
 import time
@@ -14,11 +15,12 @@ from discord import (
     User,
     Member,
     Guild,
+    Invite,
 )
 
 from discord.utils import format_dt
 from discord.ui import Button, View
-from discord.ext.commands import Cog, command, CurrentChannel, Author, CommandError
+from discord.ext.commands import Cog, command, CurrentChannel, Author, CommandError, CurrentGuild
 
 from virel.core import Virel, Context
 from virel.core.config import Configuration
@@ -99,40 +101,60 @@ class Information(Cog):
         return await ctx.paginate(rows, embed=embed)
 
     @command(aliases=["si", "guild", "guildinfo"])
-    async def serverinfo(self, ctx: Context, *, query: str = None):
+    async def serverinfo(self, ctx: Context, *, guild: Guild | Invite = CurrentGuild):
         """
         Shows information about the server.
         """
-        if query:
-            query = query.strip().replace("https://discord.gg/", "").replace("https://discord.com/invite/", "")
+        if isinstance(guild, Invite):
+            invite = guild
+            guild = invite.guild
 
-            if query.isdigit():
-                guild = self.bot.get_guild(int(query))
-                if not guild:
-                    raise CommandError("I'm not in that server.")
-            else:
-                try:
-                    invite = await self.bot.fetch_invite(query)
-                except Exception:
-                    raise CommandError("Invalid invite or server ID.")
-                
-                guild = invite.guild if isinstance(invite.guild, discord.Guild) else self.bot.get_guild(invite.guild.id)
-                if not guild:
-                    raise CommandError("I'm not in that server.")
-        else:
-            guild = ctx.guild
+            embed = Embed(color=Configuration.Colors.neutral)
+            embed.title = f"Invite code: {invite.code}"
+            embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
+            embed.add_field(
+                name="Invite",
+                value=(
+                    f">>> **Channel:** {invite.channel.name} ({invite.channel.type})\n"
+                    f"**ID:** `{invite.channel.id}`\n"
+                    f"**Expires:** {'no' if invite.max_age == 0 else f'<t:{int(invite.expires_at.timestamp())}:R>' if invite.expires_at else 'no'}\n"
+                    f"**Uses:** {invite.uses if invite.uses is not None else 'unknown'}"
+                ) if invite.channel else ">>> Unknown",
+                inline=True,
+            )
+            embed.add_field(
+                name="Server",
+                value=(
+                    f">>> **Name:** {guild.name}\n"
+                    f"**ID:** `{guild.id}`\n"
+                    f"**Members:** {invite.approximate_member_count or 'N/A'}\n"
+                    f"**Created:** {f'<t:{int(guild.created_at.timestamp())}:D>' if guild.created_at else 'N/A'}"
+                ),
+                inline=True,
+            )
+
+            view = View()
+            if guild.icon:
+                view.add_item(Button(label="Icon", url=guild.icon.url, style=ButtonStyle.link))
+            view.add_item(Button(label="Invite", url=invite.url, style=ButtonStyle.link))
+
+            return await ctx.send(embed=embed, view=view)
 
         embed = Embed(color=Configuration.Colors.neutral)
-        embed.set_author(
-            name=f"{guild.owner} ({guild.owner.id})" if guild.owner else "Unknown Owner",
-            icon_url=guild.owner.display_avatar.url if guild.owner else None,
-        )
+        if guild.owner:
+            embed.set_author(
+                name=f"{guild.owner} ({guild.owner.id})",
+                icon_url=guild.owner.display_avatar.url,
+            )
+        else:
+            embed.set_author(name="Unknown Owner")
+        
         embed.title = guild.name
-        embed.description = (
-            f"Created on <t:{int(guild.created_at.timestamp())}:D>  <t:{int(guild.created_at.timestamp())}:R>\n"
-            f"Joined on <t:{int(guild.me.joined_at.timestamp()) if guild.me.joined_at else int(guild.created_at.timestamp())}:D>  "
-            f"<t:{int(guild.me.joined_at.timestamp()) if guild.me.joined_at else int(guild.created_at.timestamp())}:R>"
-        )
+        embed.description = f"Created on <t:{int(guild.created_at.timestamp())}:D>  <t:{int(guild.created_at.timestamp())}:R>"
+        if guild.me and guild.me.joined_at:
+            embed.description += (
+                f"\nJoined on <t:{int(guild.me.joined_at.timestamp())}:D>  <t:{int(guild.me.joined_at.timestamp())}:R>"
+            )
         embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
         embed.add_field(
             name="Counts",
