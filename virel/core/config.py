@@ -33,11 +33,11 @@ class Configuration:
         for approved, denied, informational, and warning messages.
         """
 
-        approved = int(os.environ.get("color_approved", "729BB0"), 16)
-        denied = int(os.environ.get("color_denied", "FF3939"), 16)
-        info = int(os.environ.get("color_info", "729BB0"), 16)
-        warning = int(os.environ.get("color_warning", "FFD600"), 16)
-        neutral = int(os.environ.get("color_neutral", "729BB0"), 16)
+        approved = int(os.environ.get("color_approved", "D1BCCE"), 16)
+        denied = int(os.environ.get("color_denied", "D1BCCE"), 16)
+        info = int(os.environ.get("color_info", "D1BCCE"), 16)
+        warning = int(os.environ.get("color_warning", "D1BCCE"), 16)
+        neutral = int(os.environ.get("color_neutral", "D1BCCE"), 16)
 
     class Emojis:
         """
@@ -49,3 +49,8 @@ class Configuration:
         denied = os.environ.get("emoji_denied")
         info = os.environ.get("emoji_info")
         warning = os.environ.get("emoji_warning")
+
+        left = os.environ.get("emoji_left")
+        right = os.environ.get("emoji_right")
+        cancel = os.environ.get("emoji_cancel")
+        navigate = os.environ.get("emoji_navigate")

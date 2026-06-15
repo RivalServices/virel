@@ -1,8 +1,41 @@
 from discord import ButtonStyle, Embed, Interaction
 from discord.ext.commands import Context
-from discord.ui import View, Button, button
+from discord.ui import View, Button, Modal, TextInput, button
 
 from virel.core.config import Configuration
+
+
+class PageModal(Modal, title="Go to page"):
+    """
+    A modal for navigating to a specific page in the paginator.
+    """
+    page = TextInput(label="Page number", placeholder="Enter a page number...", max_length=5)
+
+    def __init__(self, paginator: "Paginator"):
+        """
+        Initializes the page modal.
+ 
+        Args:
+            paginator (Paginator): The paginator to navigate.
+        """
+        super().__init__()
+        self.paginator = paginator
+
+    async def on_submit(self, interaction: Interaction):
+        """
+        Called when the page modal is submitted.
+        """
+        try:
+            value = int(self.page.value)
+        except ValueError:
+            return await interaction.response.send_message("That's not a valid number", ephemeral=True)
+
+        if value < 1 or value > len(self.paginator.pages):
+            return await interaction.response.send_message(
+                f"Page must be between **1** and **{len(self.paginator.pages)}**.", ephemeral=True
+            )
+
+        await self.paginator._show(interaction, value - 1)
 
 
 class Paginator(View):
@@ -73,35 +106,25 @@ class Paginator(View):
         self.current = index
         await interaction.response.edit_message(embed=self.pages[self.current])
 
-    @button(emoji="⏮", style=ButtonStyle.grey)
-    async def first(self, interaction: Interaction, _btn: Button):
-        """
-        Shows the first embed page.
-        """
-        await self._show(interaction, 0)
-
-    @button(emoji="◀", style=ButtonStyle.grey)
+    @button(emoji=f"{Configuration.Emojis.left}", style=ButtonStyle.grey)
     async def previous(self, interaction: Interaction, _btn: Button):
         """
         Shows the previous embed page.
         """
         await self._show(interaction, max(0, self.current - 1))
 
-    @button(emoji="▶", style=ButtonStyle.grey)
+    @button(emoji=f"{Configuration.Emojis.right}", style=ButtonStyle.grey)
     async def next(self, interaction: Interaction, _btn: Button):
         """
         Shows the next embed page.
         """
         await self._show(interaction, min(len(self.pages) - 1, self.current + 1))
 
-    @button(emoji="⏭", style=ButtonStyle.grey)
-    async def last(self, interaction: Interaction, _btn: Button):
-        """
-        Shows the last embed page.
-        """
-        await self._show(interaction, len(self.pages) - 1)
+    @button(emoji=f"{Configuration.Emojis.navigate}", style=ButtonStyle.grey)
+    async def navigate(self, interaction: Interaction, _btn: Button):
+        await interaction.response.send_modal(PageModal(self))
 
-    @button(emoji="⏹", style=ButtonStyle.red)
+    @button(emoji=f"{Configuration.Emojis.cancel}", style=ButtonStyle.red)
     async def stop_paginator(self, interaction: Interaction, _btn: Button):
         """
         Stops the paginator by editing the message to remove the view.
