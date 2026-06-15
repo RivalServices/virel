@@ -34,18 +34,45 @@ class Developer(Cog):
         ]
         return await ctx.paginate(entries)
 
-    @command()
+    @command(aliases=["rl"])
     async def reload(self, ctx: Context, extension: str):
         """
         Reloads a cog.
         """
+        ext = f"virel.extensions.{extension}"
         try:
-            await self.bot.reload_extension(f"virel.extensions.{extension}")
-            await ctx.approved(f"Reloaded {extension}")
-            logger.info(f"Reloaded {extension}")
+            if ext in self.bot.extensions:
+                await self.bot.reload_extension(ext)
+                await ctx.approved(f"Reloaded {extension}")
+                logger.info(f"Reloaded {extension}")
+            else:
+                await self.bot.load_extension(ext)
+                await ctx.approved(f"Loaded {extension}")
+                logger.info(f"Loaded {extension}")
         
         except Exception as e:
-            await ctx.denied(f"Failed to reload {extension}: {e}")
+            await ctx.denied(f"Failed to reload {extension}: ```yaml\n{e}```")
+
+    @command(aliases=["ul"])
+    async def unload(self, ctx: Context, extension: str):
+        """
+        Unloads a cog.
+        """
+        forbidden = ["dev", "jishaku"]
+        if extension in forbidden:
+            return await ctx.denied(f"Extension {extension} is forbidden to unload")
+        
+        ext = f"virel.extensions.{extension}"
+        try:
+            if ext in self.bot.extensions:
+                await self.bot.unload_extension(ext)
+                await ctx.approved(f"Unloaded {extension}")
+                logger.info(f"Unloaded {extension}")
+            else:
+                await ctx.denied(f"Extension {extension} is not loaded")
+        
+        except Exception as e:
+            await ctx.denied(f"Failed to unload {extension}: ```yaml\n{e}```")
 
 async def setup(bot: Virel):
     await bot.add_cog(Developer(bot))

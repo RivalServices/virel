@@ -2,10 +2,7 @@ import sys
 import discord
 import time
 
-import humanize
-
-from humanize import precisedelta
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from discord import (
     Embed, 
@@ -16,6 +13,7 @@ from discord import (
     Role,
     User,
     Member,
+    Guild,
 )
 
 from discord.utils import format_dt
@@ -83,7 +81,7 @@ class Information(Cog):
         """
         Shows the uptime of the bot.
         """
-        return await ctx.reply(f"ngl.. i been peepin for {precisedelta(datetime.now() - self.bot.startup_time, format='%0.0f')}")
+        return await ctx.reply(f"ngl.. i been peepin since <t:{int(self.bot.startup_time.timestamp())}:R>")
     
     @command(name="roles")
     async def roles(self, ctx: Context):
@@ -93,12 +91,97 @@ class Information(Cog):
         if not (roles := list(reversed(ctx.guild.roles[1:]))):
             raise CommandError(f"No roles have been found in {ctx.guild.name}!")
 
-        rows = [f"{i + 1}. {role.mention} \u2013 {len(role.members)} member{'s' if len(role.members) != 1 else ''}" for i, role in enumerate(roles)]
+        rows = [f"{role.mention} - {len(role.members)} member{'s' if len(role.members) != 1 else ''}" for i, role in enumerate(roles)]
 
         embed = Embed(title=f"Roles in {ctx.guild.name}", color=Configuration.Colors.neutral)
         embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon.url if ctx.guild.icon else None)
 
-        return await ctx.paginate(embed, rows)
+        return await ctx.paginate(rows, embed=embed)
+
+    @command(aliases=["si", "guild", "guildinfo"])
+    async def serverinfo(self, ctx: Context, *, query: str = None):
+        """
+        Shows information about the server.
+        """
+        if query:
+            query = query.strip().replace("https://discord.gg/", "").replace("https://discord.com/invite/", "")
+
+            if query.isdigit():
+                guild = self.bot.get_guild(int(query))
+                if not guild:
+                    raise CommandError("I'm not in that server.")
+            else:
+                try:
+                    invite = await self.bot.fetch_invite(query)
+                except Exception:
+                    raise CommandError("Invalid invite or server ID.")
+                
+                guild = invite.guild if isinstance(invite.guild, discord.Guild) else self.bot.get_guild(invite.guild.id)
+                if not guild:
+                    raise CommandError("I'm not in that server.")
+        else:
+            guild = ctx.guild
+
+        embed = Embed(color=Configuration.Colors.neutral)
+        embed.set_author(
+            name=f"{guild.owner} ({guild.owner.id})" if guild.owner else "Unknown Owner",
+            icon_url=guild.owner.display_avatar.url if guild.owner else None,
+        )
+        embed.title = guild.name
+        embed.description = (
+            f"Created on <t:{int(guild.created_at.timestamp())}:D>  <t:{int(guild.created_at.timestamp())}:R>\n"
+            f"Joined on <t:{int(guild.me.joined_at.timestamp()) if guild.me.joined_at else int(guild.created_at.timestamp())}:D>  "
+            f"<t:{int(guild.me.joined_at.timestamp()) if guild.me.joined_at else int(guild.created_at.timestamp())}:R>"
+        )
+        embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
+        embed.add_field(
+            name="Counts",
+            value=(
+                f">>> **Roles:** {len(guild.roles) - 1}\n"
+                f"**Emojis:** {len(guild.emojis)}\n"
+                f"**Stickers:** {len(guild.stickers)}"
+            ),
+            inline=True,
+        )
+        embed.add_field(
+            name="Members",
+            value=(
+                f">>> **Users:** {sum(1 for m in guild.members if not m.bot):,}\n"
+                f"**Bots:** {sum(1 for m in guild.members if m.bot):,}\n"
+                f"**Total:** {guild.member_count:,}"
+            ),
+            inline=True,
+        )
+        embed.add_field(
+            name="Channels",
+            value=(
+                f">>> **Text:** {len(guild.text_channels)}\n"
+                f"**Voice:** {len(guild.voice_channels)}\n"
+                f"**Categories:** {len(guild.categories)}"
+            ),
+            inline=True,
+        )
+        embed.add_field(
+            name="Info",
+            value=(
+                f">>> **Vanity:** {guild.vanity_url_code or 'N/A'}\n"
+                f"**Popularity:** {sorted(self.bot.guilds, key=lambda g: g.member_count or 0, reverse=True).index(guild) + 1}/{len(self.bot.guilds)}\n"
+                f"**Owner:** {guild.owner.mention if guild.owner else 'Unknown'}"
+            ),
+            inline=True,
+        )
+        embed.add_field(
+            name="Boost",
+            value=(
+                f">>> **Boosts:** {guild.premium_subscription_count}\n"
+                f"**Level:** {guild.premium_tier}\n"
+                f"**Boosters:** {len(guild.premium_subscribers)}"
+            ),
+            inline=True,
+        )
+        embed.set_footer(text=f"Guild ID: {guild.id} \u2022 Shard: {guild.shard_id or 0}/{self.bot.shard_count or 1}")
+
+        return await ctx.send(embed=embed)
 
     @command(aliases=["ui", "whois", "who"])
     async def userinfo(self, ctx, member: Member = Author):

@@ -39,7 +39,7 @@ class Paginator(View):
         for i in range(0, len(entries), per_page):
             chunk = entries[i:i + per_page]
             page = base.copy()
-            page.description = "\n".join(f"`{i + j + 1}.` {e}" for j, e in enumerate(chunk))
+            page.description = "\n".join(f"{i + j + 1}. {e}" for j, e in enumerate(chunk))
             page.set_footer(text=f"Page {len(self.pages) + 1}/{total}")
             self.pages.append(page)
 

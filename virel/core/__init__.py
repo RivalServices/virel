@@ -11,6 +11,7 @@ from datetime import datetime
 
 from .config import Configuration
 from .functions.context import Context
+from .functions.context.errors import CommandErrorHandler
 from .functions.discord import load_extensions, Help, get_prefix
 from .network import NetworkServer
 from .services.postgres import PostgresClient
@@ -56,9 +57,19 @@ class Virel(AutoShardedBot):
         self.startup_time = datetime.now()
         self.shard_ready_times: dict[int, datetime] = {}
         self.network = NetworkServer(self)
+        self.error_handler = CommandErrorHandler(self)
 
     async def on_shard_ready(self, shard_id: int):
+        """
+        Event called whenever a shard is ready.
+        """
         self.shard_ready_times[shard_id] = datetime.now()
+
+    async def on_command_error(self, ctx: Context, exc):
+        """
+        Event called whenever a command error occurs.
+        """
+        await self.error_handler.on_command_error(ctx, exc)
 
     async def on_command(self, ctx: Context):
         """
