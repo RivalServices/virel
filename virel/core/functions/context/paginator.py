@@ -122,6 +122,9 @@ class Paginator(View):
 
     @button(emoji=f"{Configuration.Emojis.navigate}", style=ButtonStyle.grey)
     async def navigate(self, interaction: Interaction, _btn: Button):
+        """
+        Shows the page modal.
+        """
         await interaction.response.send_modal(PageModal(self))
 
     @button(emoji=f"{Configuration.Emojis.cancel}", style=ButtonStyle.red)
