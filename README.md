@@ -12,6 +12,7 @@ View the live bot [here](https://rival.rest) and [invite](https://discord.com/oa
 
 # Credits for artwork and emojis
 Credits for the emojis and artwork goes to [Curet](https://haunt.gg/curet)
+
 Update as of 06/15/2026: Because the emojis are so ugly, I have decided to revert the emojis back to Rival's normal emojis.
 
 # Reasoning
