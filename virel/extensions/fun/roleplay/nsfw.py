@@ -1,9 +1,9 @@
-from .methods.roleplay import PurrBot
+from ..methods.roleplay import PurrBot
 from virel.core import Virel
 from virel.core.functions.context import Context
 
 from discord import Member
-from discord.ext.commands import Cog, command, is_nsfw
+from discord.ext.commands import Cog, command, is_nsfw, Author
 
 class NSFW(Cog):
     """
@@ -15,7 +15,7 @@ class NSFW(Cog):
 
     @is_nsfw()
     @command()
-    async def anal(self, ctx: Context, member: Member):
+    async def anal(self, ctx: Context, member: Member = Author):
         """
         Give anal sex to a member.
         """
@@ -23,7 +23,7 @@ class NSFW(Cog):
 
     @is_nsfw()
     @command(aliases=["bj"])
-    async def blowjob(self, ctx: Context, member: Member):
+    async def blowjob(self, ctx: Context, member: Member = Author):
         """
         Give a blowjob to a member.
         """
@@ -31,7 +31,7 @@ class NSFW(Cog):
 
     @is_nsfw()
     @command()
-    async def cum(self, ctx: Context, member: Member):
+    async def cum(self, ctx: Context, member: Member = Author):
         """
         Cum on a member.
         """
@@ -39,7 +39,7 @@ class NSFW(Cog):
 
     @is_nsfw()
     @command()
-    async def fuck(self, ctx: Context, member: Member):
+    async def fuck(self, ctx: Context, member: Member = Author):
         """
         Have sex with a member.
         """
@@ -47,7 +47,7 @@ class NSFW(Cog):
 
     @is_nsfw()
     @command()
-    async def pussylick(self, ctx: Context, member: Member):
+    async def pussylick(self, ctx: Context, member: Member = Author):
         """
         Lick a member's pussy.
         """
