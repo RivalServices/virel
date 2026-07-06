@@ -259,8 +259,7 @@ class Information(Cog):
         embed = Embed(title="Credits", color=Configuration.Colors.neutral)
         embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
         embed.description = (
-            f"[vael](https://discord.com/users/604463848526708757) - Developer\n"
-            f"[j](https://discord.com/users/123799422906793986) - Developer"
+            f"[vael](https://discord.com/users/604463848526708757) - Developer"
         )
         return await ctx.send(embed=embed)
 

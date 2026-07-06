@@ -43,6 +43,8 @@ def _example_value(ctx: Context, param) -> str | None:
         return ctx.guild.name if ctx.guild else "guild"
     if name in {"reason", "message"}:
         return name
+    if name in {"prefix"}:
+        return ctx.clean_prefix
 
     converter = _unwrap(param.converter)
     if converter in {str, int, bool}:

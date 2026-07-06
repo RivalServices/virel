@@ -1,11 +1,6 @@
-from discord import Embed
 from discord.ext.commands import Cog, command
 
-from logging import getLogger
-
 from virel.core import Virel, Context
-
-logger = getLogger(__name__)
 
 class Developer(Cog):
     """
@@ -44,11 +39,9 @@ class Developer(Cog):
             if ext in self.bot.extensions:
                 await self.bot.reload_extension(ext)
                 await ctx.approved(f"Reloaded {extension}")
-                logger.info(f"Reloaded {extension}")
             else:
                 await self.bot.load_extension(ext)
                 await ctx.approved(f"Loaded {extension}")
-                logger.info(f"Loaded {extension}")
         
         except Exception as e:
             await ctx.denied(f"Failed to reload {extension}: ```yaml\n{e}```")
@@ -67,7 +60,6 @@ class Developer(Cog):
             if ext in self.bot.extensions:
                 await self.bot.unload_extension(ext)
                 await ctx.approved(f"Unloaded {extension}")
-                logger.info(f"Unloaded {extension}")
             else:
                 await ctx.denied(f"Extension {extension} is not loaded")
         

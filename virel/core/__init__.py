@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 
+import aiohttp
 from discord import Intents, AllowedMentions, CustomActivity
 from discord.ext.commands import AutoShardedBot
 
@@ -58,6 +59,7 @@ class Virel(AutoShardedBot):
         self.shard_ready_times: dict[int, datetime] = {}
         self.network = NetworkServer(self)
         self.error_handler = CommandErrorHandler(self)
+        self.session: aiohttp.ClientSession | None = None
 
     async def on_shard_ready(self, shard_id: int):
         """
@@ -98,6 +100,8 @@ class Virel(AutoShardedBot):
         self.redis = RedisClient()
         await self.redis.connect()
 
+        self.session = aiohttp.ClientSession()
+
         await load_extensions(self)
 
         asyncio.get_event_loop().create_task(self.network.start())
@@ -116,6 +120,8 @@ class Virel(AutoShardedBot):
             await self.db.close()
         if hasattr(self, "redis") and self.redis:
             await self.redis.close()
+        if hasattr(self, "session") and self.session:
+            await self.session.close()
         
         await self.network.stop()
         await super().close()
