@@ -18,6 +18,7 @@ class Configuration:
         token = os.environ.get("token")
         owner_ids = [int(x) for x in os.environ.get("owner_ids", "").split(",") if x]
         client_id = os.environ.get("client_id")
+        proxy_url = os.environ.get("proxy_url")
 
     class Core:
         """

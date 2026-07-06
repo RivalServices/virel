@@ -5,6 +5,7 @@ from yarl import URL
 from virel.core import Virel
 from virel.core.config import Configuration
 from virel.core.functions.context import Context
+from virel.core.config import Configuration
 
 from .actions import ACTIONS
 
@@ -17,7 +18,7 @@ def api_url(category: str) -> URL:
         scheme="https",
         host="api.purrbot.site",
         path=f"/v2/img/nsfw/{category}/gif",
-    )
+    ).with_query(proxy=Configuration.Bot.proxy_url)
 
 
 def format_action(category: str, member: Member) -> str:
