@@ -47,3 +47,31 @@ class SFW(Cog):
         Tickle a member.
         """
         await self.otaku.send(ctx, member, "tickle")
+
+    @command()
+    async def bite(self, ctx: Context, member: Member = Author):
+        """
+        Bite a member.
+        """
+        await self.otaku.send(ctx, member, "bite")
+
+    @command()
+    async def pinch(self, ctx: Context, member: Member = Author):
+        """
+        Pinch a member.
+        """
+        await self.otaku.send(ctx, member, "pinch")
+
+    @command()
+    async def laugh(self, ctx: Context):
+        """
+        Laugh.
+        """
+        await self.otaku.send(ctx, None, "laugh")
+
+    @command()
+    async def cry(self, ctx: Context):
+        """
+        Cry.
+        """
+        await self.otaku.send(ctx, None, "cry")

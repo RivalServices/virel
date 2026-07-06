@@ -45,7 +45,7 @@ class Otaku:
             data = await response.json()
 
         embed = Embed(color=Configuration.Colors.neutral)
-        if member is not ctx.author:
+        if member is not ctx.author and member is not None:
             embed.description = (
                 f"*Aww how cute!* **{ctx.author.display_name}** "
                 f"{format_action(category, member)}"
